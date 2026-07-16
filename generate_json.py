@@ -15,20 +15,12 @@ folders = {
 
 def get_file_age_in_days(filepath):
     try:
-        # Git log se latest commit ki Author Date nikal rahe hain
-        cmd = f'git log -1 --format=%ai -- "{filepath}"'
-        result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, text=True)
-        output = result.stdout.strip()
-        
-        if output:
-            # Format: "2026-07-16 16:00:00 +0530" -> Hum sirf date aur time wala part le rahe hain
-            date_part = output.split('+')[0].strip() 
-            commit_time = time.mktime(time.strptime(date_part, "%Y-%m-%d %H:%M:%S"))
-            return (time.time() - commit_time) / (24 * 3600)
-        else:
-            return 999.0
-    except Exception as e:
-        print(f"Error checking git log for {filepath}: {e}")
+        if os.path.exists(filepath):
+            # Ab ye checkout ke baad sahi mtime uthayega
+            file_mtime = os.path.getmtime(filepath)
+            return (time.time() - file_mtime) / (24 * 3600)
+        return 999.0
+    except Exception:
         return 999.0
 
 wallpaper_list = []
