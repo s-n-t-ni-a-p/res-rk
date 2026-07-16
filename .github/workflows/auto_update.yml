@@ -1,48 +1,66 @@
-name: Auto Generate JSON
+import os
+import json
+import time
+import subprocess
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+base_raw_url = "https://raw.githubusercontent.com/s-n-t-ni-a-p/res-rk/main/"
 
-on:
-  workflow_run:
-    workflows: ["Auto Generate Thumbnails"]
-    types:
-      - completed
-  schedule:
-    - cron: '0 0 * * *' 
-  workflow_dispatch: 
+folders = {
+    "S": "Videos",
+    "RK": "Radha Krishna",
+    "O": "Others",
+    "R": "Radha",
+    "K": "Krishna"
+}
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write 
-      
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name != 'workflow_run' }}
-      
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+def get_file_age_in_days(filepath):
+    try:
+        # %ct = UNIX timestamp deta hai git commit ka, jisme parsing ka koi error nahi aata
+        cmd = f'git log -1 --format=%ct -- "{filepath}"'
+        result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        output = result.stdout.strip()
+        
+        if output:
+            commit_timestamp = int(output)
+            return (time.time() - commit_timestamp) / (24 * 3600)
+        return 999.0
+    except Exception as e:
+        print(f"Error checking file {filepath}: {e}")
+        return 999.0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
+wallpaper_list = []
 
-      - name: Run JSON Generator Script
-        run: python generate_json.py
+for folder, category_name in folders.items():
+    if os.path.exists(folder):
+        files = os.listdir(folder)
+        
+        # Valid files filter
+        valid_files = [
+            f for f in files 
+            if f.endswith(('.jpg', '.jpeg', '.png', '.mp4')) and not f.startswith('thumb_')
+        ]
+        
+        def get_num(filename):
+            try: return int(filename.split('.')[0])
+            except ValueError: return 0
+        
+        valid_files.sort(key=get_num, reverse=True)
+        
+        for file in valid_files:
+            file_path = os.path.join(folder, file)
+            file_url = f"{base_raw_url}{folder}/{file}"
+            
+            # Yahan nayi file ka status check ho raha hai
+            age_in_days = get_file_age_in_days(file_path)
+            is_new = "true" if age_in_days <= 10.0 else "false"
+            
+            wallpaper_list.append({
+                "url": file_url,
+                "category": category_name,
+                "isNew": is_new
+            })
 
-      - name: Commit and Push New JSON
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add wallpapers.json
-          if git diff --quiet && git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "Auto-generated wallpapers.json by Robot"
-            git pull --rebase origin main
-            git push
-          fi
+with open("wallpapers.json", "w") as f:
+    json.dump(wallpaper_list, f, indent=2)
+
+print("✅ JSON file generate ho gayi hai!")
