@@ -20,10 +20,12 @@ def get_file_age_in_days(filepath):
         output = result.stdout.strip()
         if output:
             latest_timestamp = int(output.split('\n')[0])
-            return (time.time() - oldest_timestamp) / (24 * 3600)
+            # YAHAN latest_timestamp KARNA THA JO MAINE PEHLE NAHI BATAYA
+            return (time.time() - latest_timestamp) / (24 * 3600)
         else:
             return 999.0
-    except Exception:
+    except Exception as e:
+        print(f"Error checking {filepath}: {e}")
         return 999.0
 
 wallpaper_list = []
