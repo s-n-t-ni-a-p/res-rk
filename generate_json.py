@@ -1,7 +1,7 @@
 import os
 import json
+import subprocess
 import time
-import subprocess  # ⭐ Yeh import zaroori hai
 
 base_raw_url = "https://raw.githubusercontent.com/s-n-t-ni-a-p/res-rk/main/"
 
@@ -15,11 +15,14 @@ folders = {
 
 def get_file_age_in_days(filepath):
     try:
-        if os.path.exists(filepath):
-            # Ab ye checkout ke baad sahi mtime uthayega
-            file_mtime = os.path.getmtime(filepath)
-            return (time.time() - file_mtime) / (24 * 3600)
-        return 999.0
+        cmd = f'git log --format=%at -- "{filepath}"'
+        result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, text=True)
+        output = result.stdout.strip()
+        if output:
+            oldest_timestamp = int(output.split('\n')[-1])
+            return (time.time() - oldest_timestamp) / (24 * 3600)
+        else:
+            return 999.0
     except Exception:
         return 999.0
 
@@ -29,7 +32,8 @@ for folder, category_name in folders.items():
     if os.path.exists(folder):
         files = os.listdir(folder)
         
-        # Valid files filter
+        # ⭐ SABSE BADA FIX YAHAN HAI: 
+        # Humne check laga diya ki wahi file uthao jo valid ho AUR jiska naam 'thumb_' se shuru NAHI hota ho.
         valid_files = [
             f for f in files 
             if f.endswith(('.jpg', '.jpeg', '.png', '.mp4')) and not f.startswith('thumb_')
@@ -42,10 +46,8 @@ for folder, category_name in folders.items():
         valid_files.sort(key=get_num, reverse=True)
         
         for file in valid_files:
-            file_path = os.path.join(folder, file)
             file_url = f"{base_raw_url}{folder}/{file}"
-            
-            age_in_days = get_file_age_in_days(file_path)
+            age_in_days = get_file_age_in_days(f"{folder}/{file}")
             is_new = "true" if age_in_days <= 10.0 else "false"
             
             wallpaper_list.append({
@@ -56,4 +58,3 @@ for folder, category_name in folders.items():
 
 with open("wallpapers.json", "w") as f:
     json.dump(wallpaper_list, f, indent=2)
-print("✅ JSON file generate ho gayi hai!")
