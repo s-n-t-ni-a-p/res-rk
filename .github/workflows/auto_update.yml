@@ -25,7 +25,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          set-timestamps: true
 
       - name: Setup Python
         uses: actions/setup-python@v5
