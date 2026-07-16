@@ -15,13 +15,17 @@ folders = {
 # ⭐ NAYA LOGIC: Git history ke bajaye file ka actual modification time check karein
 def get_file_age_in_days(filepath):
     try:
-        # ⭐ FIX: Sirf '-1' yaani sirf latest commit ka timestamp uthao
-        cmd = f'git log -1 --format=%at -- "{filepath}"'
+        # %ai use kar rahe hain jo "Author Date" (ISO 8601 format) deti hai
+        cmd = f'git log -1 --format=%ai -- "{filepath}"'
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, text=True)
         output = result.stdout.strip()
+        
         if output:
-            last_commit_timestamp = int(output)
-            return (time.time() - last_commit_timestamp) / (24 * 3600)
+            # GitHub ka format parse karne ke liye
+            # Format: 2026-07-16 16:00:00 +0530
+            date_str = output.split(' ')[0] + ' ' + output.split(' ')[1]
+            commit_time = time.mktime(time.strptime(date_str, "%Y-%m-%d %H:%M:%S"))
+            return (time.time() - commit_time) / (24 * 3600)
         else:
             return 999.0
     except Exception:
