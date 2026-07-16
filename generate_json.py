@@ -19,7 +19,7 @@ def get_file_age_in_days(filepath):
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, text=True)
         output = result.stdout.strip()
         if output:
-            oldest_timestamp = int(output.split('\n')[-1])
+            oldest_timestamp = int(output.split('\n')[-0])
             return (time.time() - oldest_timestamp) / (24 * 3600)
         else:
             return 999.0
