@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import subprocess  # ⭐ Yeh import zaroori hai
 
 base_raw_url = "https://raw.githubusercontent.com/s-n-t-ni-a-p/res-rk/main/"
 
@@ -12,23 +13,22 @@ folders = {
     "K": "Krishna"
 }
 
-# ⭐ NAYA LOGIC: Git history ke bajaye file ka actual modification time check karein
 def get_file_age_in_days(filepath):
     try:
-        # %ai use kar rahe hain jo "Author Date" (ISO 8601 format) deti hai
+        # Git log se latest commit ki Author Date nikal rahe hain
         cmd = f'git log -1 --format=%ai -- "{filepath}"'
         result = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, text=True)
         output = result.stdout.strip()
         
         if output:
-            # GitHub ka format parse karne ke liye
-            # Format: 2026-07-16 16:00:00 +0530
-            date_str = output.split(' ')[0] + ' ' + output.split(' ')[1]
-            commit_time = time.mktime(time.strptime(date_str, "%Y-%m-%d %H:%M:%S"))
+            # Format: "2026-07-16 16:00:00 +0530" -> Hum sirf date aur time wala part le rahe hain
+            date_part = output.split('+')[0].strip() 
+            commit_time = time.mktime(time.strptime(date_part, "%Y-%m-%d %H:%M:%S"))
             return (time.time() - commit_time) / (24 * 3600)
         else:
             return 999.0
-    except Exception:
+    except Exception as e:
+        print(f"Error checking git log for {filepath}: {e}")
         return 999.0
 
 wallpaper_list = []
@@ -50,9 +50,10 @@ for folder, category_name in folders.items():
         valid_files.sort(key=get_num, reverse=True)
         
         for file in valid_files:
+            file_path = os.path.join(folder, file)
             file_url = f"{base_raw_url}{folder}/{file}"
-            # Yahan naya logic call ho raha hai
-            age_in_days = get_file_age_in_days(os.path.join(folder, file))
+            
+            age_in_days = get_file_age_in_days(file_path)
             is_new = "true" if age_in_days <= 10.0 else "false"
             
             wallpaper_list.append({
@@ -63,3 +64,4 @@ for folder, category_name in folders.items():
 
 with open("wallpapers.json", "w") as f:
     json.dump(wallpaper_list, f, indent=2)
+print("✅ JSON file generate ho gayi hai!")
