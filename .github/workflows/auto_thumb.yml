@@ -10,7 +10,7 @@ on:
     paths:
       - 'S/**'
       - 'RK/**'
-      - 'O/**'
+      # YAHAN SE '- 'O/**'' HATA DIYA GAYA HAI
       - 'R/**'
       - 'K/**'
   workflow_dispatch:
