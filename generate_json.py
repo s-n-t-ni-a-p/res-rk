@@ -5,10 +5,10 @@ import time
 
 base_raw_url = "https://raw.githubusercontent.com/s-n-t-ni-a-p/res-rk/main/"
 
+# YAHAN SE 'O': 'Others' HATA DIYA GAYA HAI
 folders = {
     "S": "Videos",
     "RK": "Radha Krishna",
-    "O": "Others",
     "R": "Radha",
     "K": "Krishna"
 }
